@@ -1,2 +1,3 @@
 User-agent: *
 Allow: /
+Sitemap: https://junaidhashim520.github.io/pawpaws.com/sitemap.xml
