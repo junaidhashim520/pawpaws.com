@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "PawPass"
+description = "A warm, trustworthy pet-care booking experience for finding vetted local providers, setting recurring care, and managing every booking in one place."
+version = "1.0.0"
+id = "artifacts/pawpass"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22307
+
+[services.development]
+run = "pnpm --filter @workspace/pawpass run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/pawpass", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/pawpass/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22307"
+BASE_PATH = "/"
