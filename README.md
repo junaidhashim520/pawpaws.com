@@ -31,12 +31,16 @@ npm start
 - Demo delivery/pickup selection and order receipt. Example USD prices; no tax calculation, payment collection, personal information, or fulfillment.
 - Pet profile, provider search, date selection, saved demo bookings, and cancellation.
 - Accessible dialogs, mobile navigation, reduced-motion support, and keyboard focus styling.
-
+- Floating 24/7 support chat that saves customer questions to the support inbox.
 Cart, receipts, pet profiles, and care bookings use this browser?s local storage. Clearing site data removes them. Checkout orders and support messages are saved to the server database for the admin team.
-
+- Gemini-powered PawPass Care Guide for conversational answers and care-request handoff.
 ## Customer request flow
 
 Customer orders are submitted to `POST /api/orders` and support messages to `POST /api/support`. Both are stored in SQLite. After signing in at `/admin`, open `/admin/inbox` to review orders and support requests and update their status. Payment, email notifications, shipping, and fulfillment still need to be connected for a production launch.
+
+## AI setup
+
+Set `GEMINI_API_KEY` on the server before starting the app. The browser never receives this key. Optionally set `GEMINI_MODEL` to choose another Gemini model; the default is `gemini-2.0-flash`. The AI endpoint is `POST /api/ai/chat`. It is grounded to PawPass services, does not make veterinary diagnoses or claim bookings are complete, and saves a care/support handoff to the admin inbox when the customer provides their name, email, and request.
 
 The earlier SQLite waitlist API remains available at POST `/api/waitlist`, with validation and duplicate handling, but is not exposed in the portfolio storefront. Its database is `data/pawpass.sqlite`; the file is excluded from version control. API tests use an isolated in-memory database.
 
