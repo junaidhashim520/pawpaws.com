@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { ArrowDown, ArrowUp, ArrowUpRight, Eye, EyeOff, LayoutGrid, LogOut, Package, PawPrint, Pencil, Plus, Save, Search, Upload } from 'lucide-react';
+import { ArrowDown, ArrowUp, ArrowUpRight, ClipboardList, Eye, EyeOff, LayoutGrid, LogOut, MessageCircle, Package, PawPrint, Pencil, Plus, Save, Search, Upload } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import ProductArt from '@/components/product-art';
 import { money, type Catalog, type CatalogGroup, type Product } from '@/data/products';
@@ -7,6 +7,7 @@ import './admin-panel.css';
 
 type Draft = Omit<Product, 'id' | 'position' | 'category' | 'pets'> & { id?: string };
 type GroupDraft = { id?: string; name: string; kind: 'category' | 'pet'; image: string; note: string };
+type InboxTab = 'orders' | 'support';
 const emptyCatalog: Catalog = { products: [], categories: [], petGroups: [] };
 const blank = (catalog: Catalog): Draft => ({ name: '', categoryId: catalog.categories[0]?.id || '', kind: 'product', price: 0, stock: 0, published: false, image: '', color: '#e9dfd2', ink: '#6b5146', art: 'food', badge: '', detail: '', size: '', petIds: catalog.petGroups[0] ? [catalog.petGroups[0].id] : [] });
 class RequestError extends Error { constructor(message: string, public status: number) { super(message); } }
@@ -44,6 +45,12 @@ function PhotoField({ value, onChange, onBusy, onError }: { value: string; onCha
   catch (error) { onError(error); } finally { setUploading(false); onBusy(false); }
  }} /></label><small>PNG, JPG, WebP or GIF · Up to 5 MB</small></div>;
 }
+function AdminInbox({ tab }: { tab: InboxTab }) {
+ const [items, setItems] = useState<any[]>([]); const [error, setError] = useState('');
+ useEffect(() => { void request<any[]>(`/api/admin/${tab}`).then(setItems).catch(e => setError(e instanceof Error ? e.message : 'Unable to load inbox.')); }, [tab]);
+ async function update(id: string, status: string) { const response = await request(`/api/admin/${tab}/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) }); if (response) setItems(current => current.map(item => item.id === id ? { ...item, status } : item)); }
+ return <section className="admin-inventory admin-inbox"><div className="admin-section-heading"><div><span className="admin-kicker">{tab === 'orders' ? 'CUSTOMER ORDERS' : 'CUSTOMER SUPPORT'}</span><h2>{tab === 'orders' ? 'Order inbox' : 'Support requests'}</h2></div><p>{items.length} {tab === 'orders' ? 'orders' : 'requests'}</p></div>{error&&<p className="admin-error" role="alert">{error}</p>}{!items.length&&!error&&<div className="admin-empty"><PawPrint size={30}/><p>No {tab === 'orders' ? 'orders' : 'support requests'} yet.</p></div>}<div className="admin-inbox-list">{items.map(item => <article className="admin-inbox-item" key={item.id}><div><span className="admin-kicker">{item.id} · {new Date(item.created_at).toLocaleString()}</span><h3>{item.name} <small>{item.email}</small></h3>{tab === 'orders' ? <><p>{item.items.map((line: { name: string; quantity: number }) => `${line.name} × ${line.quantity}`).join(', ')}</p><strong>${Number(item.total).toFixed(2)} · {item.delivery === 'pickup' ? 'Pickup' : 'Delivery'}</strong></> : <p>{item.message}</p>}</div><select value={item.status} onChange={event => void update(item.id, event.target.value)} aria-label={`Update ${item.id} status`}>{(tab === 'orders' ? ['new', 'confirmed', 'complete', 'cancelled'] : ['new', 'in_progress', 'resolved']).map(status => <option key={status} value={status}>{status.replace('_', ' ')}</option>)}</select></article>)}</div></section>;
+}
 export default function AdminPanel() {
  const [user, setUser] = useState<string | null>(null);
  const [configured, setConfigured] = useState(true);
@@ -59,7 +66,7 @@ export default function AdminPanel() {
  const locked = useRef(false);
  const [query, setQuery] = useState('');
  const [status, setStatus] = useState('all');
- const [tab, setTab] = useState<'listings' | 'groups'>('listings');
+ const [tab, setTab] = useState<'listings' | 'groups' | InboxTab>('listings');
  const fail = (e: unknown) => { setError(e instanceof Error ? e.message : 'Something went wrong. Please try again.'); if (e instanceof RequestError && e.status === 401) { setUser(null); setDraft(null); setGroup(null); setDeleting(null); setCatalog(emptyCatalog); } };
  const loadSession = async () => { const session = await request<{ user: string | null; configured: boolean }>('/api/admin/session'); setConfigured(session.configured); if (session.user) { const data = await request<Catalog>('/api/admin/catalog'); setCatalog(data); } setUser(session.user); setError(''); };
  useEffect(() => { let alive = true; void loadSession().catch(e => { if (alive) fail(e); }).finally(() => { if (alive) setLoading(false); }); return () => { alive = false; }; }, []);

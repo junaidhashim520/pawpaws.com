@@ -32,7 +32,11 @@ npm start
 - Pet profile, provider search, date selection, saved demo bookings, and cancellation.
 - Accessible dialogs, mobile navigation, reduced-motion support, and keyboard focus styling.
 
-Cart, receipts, pet profiles, and care bookings use this browser?s local storage. Clearing site data removes them. The checkout sends no orders or data to a server.
+Cart, receipts, pet profiles, and care bookings use this browser?s local storage. Clearing site data removes them. Checkout orders and support messages are saved to the server database for the admin team.
+
+## Customer request flow
+
+Customer orders are submitted to `POST /api/orders` and support messages to `POST /api/support`. Both are stored in SQLite. After signing in at `/admin`, open `/admin/inbox` to review orders and support requests and update their status. Payment, email notifications, shipping, and fulfillment still need to be connected for a production launch.
 
 The earlier SQLite waitlist API remains available at POST `/api/waitlist`, with validation and duplicate handling, but is not exposed in the portfolio storefront. Its database is `data/pawpass.sqlite`; the file is excluded from version control. API tests use an isolated in-memory database.
 

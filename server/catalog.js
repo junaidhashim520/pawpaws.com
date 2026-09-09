@@ -51,4 +51,5 @@ export function installCatalog(app,db,uploadDir) {
  });
  mkdirSync(uploadDir,{recursive:true});app.use('/uploads',express.static(uploadDir,{setHeaders:res=>{res.set('X-Content-Type-Options','nosniff');res.set('Cache-Control','public, max-age=86400');}}));
  app.post('/api/admin/upload',requireAdmin,(req,res)=>{const {data}=req.body||{};if(typeof data!=='string'||data.length>7000000)return res.status(400).json({error:'Choose a PNG, JPG, WebP, or GIF under 5 MB.'});const buffer=Buffer.from(data,'base64');let ext='';if(buffer.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])))ext='png';else if(buffer[0]===255&&buffer[1]===216&&buffer[2]===255)ext='jpg';else if(['GIF87a','GIF89a'].includes(buffer.toString('ascii',0,6)))ext='gif';else if(buffer.toString('ascii',0,4)==='RIFF'&&buffer.toString('ascii',8,12)==='WEBP')ext='webp';if(!ext||buffer.length>5*1024*1024)return res.status(400).json({error:'Choose a valid PNG, JPG, WebP, or GIF under 5 MB.'});const name=randomUUID()+'.'+ext;writeFileSync(path.join(uploadDir,name),buffer);res.status(201).json({url:'/uploads/'+name});});
+ return requireAdmin;
 }
