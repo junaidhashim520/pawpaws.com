@@ -1,10 +1,21 @@
 import { installCatalog } from './catalog.js';
 import express from 'express';
 import { DatabaseSync } from 'node:sqlite';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
+
+function loadLocalEnv() {
+  try {
+    const contents = readFileSync(new URL('../.env', import.meta.url), 'utf8');
+    for (const line of contents.split(/\r?\n/)) {
+      const match = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
+      if (match && !process.env[match[1]]) process.env[match[1]] = match[2].replace(/^['"]|['"]$/g, '');
+    }
+  } catch { /* Local .env is optional in hosted environments. */ }
+}
+loadLocalEnv();
 
 export function createApp(databasePath = 'data/pawpass.sqlite', options = {}) {
   if (databasePath !== ':memory:') mkdirSync(path.dirname(databasePath), { recursive: true });
@@ -45,7 +56,7 @@ export function createApp(databasePath = 'data/pawpass.sqlite', options = {}) {
   });
   app.post('/api/ai/chat', async (req, res) => {
     const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) return res.status(503).json({ error: 'PawPass AI is not configured yet. Please use the support form instead.' });
+    if (!apiKey) return res.status(503).json({ error: 'PawPass AI needs GEMINI_API_KEY in the server .env file.' });
     const messages = Array.isArray(req.body?.messages) ? req.body.messages.filter(message => message && ['user', 'model'].includes(message.role) && typeof message.text === 'string').slice(-12) : [];
     if (!messages.length || messages.some(message => message.text.length > 4000)) return res.status(400).json({ error: 'Please send a valid conversation.' });
     const system = `You are PawPass Care Guide, a warm and concise customer-care AI for PawPass, a pet shop and care service. PawPass provides pet essentials, pet sitting, home visits, dog walking, grooming support, and care while customers are working, traveling, or away. Explain that this website demo does not take payment or automatically dispatch products. The customer can place an order through checkout, and orders appear in the admin inbox. You may help collect a care or support request, but never claim an appointment, payment, booking, refund, or human reply is completed. Ask for the customer's name and email before creating a request. When you have a clear care/support request and both name and email, return a handoff object. Always return valid JSON only in this shape: {"reply":"short helpful answer","handoff":null} or {"reply":"confirmation","handoff":{"name":"...","email":"...","message":"..."}}. Keep replies under 120 words. Do not provide veterinary diagnosis; recommend a veterinarian for urgent medical concerns.`;

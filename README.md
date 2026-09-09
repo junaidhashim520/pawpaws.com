@@ -40,7 +40,7 @@ Customer orders are submitted to `POST /api/orders` and support messages to `POS
 
 ## AI setup
 
-Set `GEMINI_API_KEY` on the server before starting the app. The browser never receives this key. Optionally set `GEMINI_MODEL` to choose another Gemini model; the default is `gemini-2.0-flash`. The AI endpoint is `POST /api/ai/chat`. It is grounded to PawPass services, does not make veterinary diagnoses or claim bookings are complete, and saves a care/support handoff to the admin inbox when the customer provides their name, email, and request.
+Copy `.env.example` to `.env`, add your Google AI Studio Gemini key to `GEMINI_API_KEY`, then restart the server. The browser never receives this key. Optionally set `GEMINI_MODEL` to choose another Gemini model; the default is `gemini-2.0-flash`. The AI endpoint is `POST /api/ai/chat`. It is grounded to PawPass services, does not make veterinary diagnoses or claim bookings are complete, and saves a care/support handoff to the admin inbox when the customer provides their name, email, and request.
 
 The earlier SQLite waitlist API remains available at POST `/api/waitlist`, with validation and duplicate handling, but is not exposed in the portfolio storefront. Its database is `data/pawpass.sqlite`; the file is excluded from version control. API tests use an isolated in-memory database.
 
